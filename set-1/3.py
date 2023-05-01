@@ -6,19 +6,19 @@ s = bytes.fromhex(s)
 m = {}
 
 for c in s:
-	if c in m.keys():
-		m[c] += 1
-	else:
-		m[c] = 1
+    if c in m.keys():
+        m[c] += 1
+    else:
+        m[c] = 1
 
 key = ''
 count = 0
 
 for k in m.keys():
-	if m[k] > count:
-		count = m[k]
-		key = k
+    if m[k] > count:
+        count = m[k]
+        key = k
 
 for c in s:
-	print(chr(c ^ key), end='')
+    print(chr(c ^ key), end='')
 print("")
