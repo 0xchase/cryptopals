@@ -1,26 +1,53 @@
 import base64
+from Crypto.Cipher import AES
 
-def pad(data, length):
-    padding_size = length % len(data)
-    padding = (padding_size * chr(padding_size)).encode("utf-8")
-    return data + padding
+def xor(data, key):
+    result = b''
+    for i in range(len(data)):
+        result += bytes([data[i] ^ key[i % len(key)]])
+    return result
 
-key = "YELLOW SUBMARINE".encode("utf-8")
+def cbc_encrypt(data, key, iv):
+    aes = AES.new(key, AES.MODE_ECB)
+    result = b''
 
-def xor(a, b):
-    return bytes([x ^ y for x, y in zip(a, b)])
+    for i in range(0, len(data), AES.block_size):
+        block = data[i:i+16]
+        block = xor(block, iv)
+        ciphertext = aes.encrypt(block)
+        iv = ciphertext
+        result += ciphertext
 
-data = b'\x00' * 16
+    return result
+
+def cbc_decrypt(data, key, iv):
+    aes = AES.new(key, AES.MODE_ECB)
+    result = b''
+
+    for i in range(0, len(data), AES.block_size):
+        block = data[i:i+16]
+        decrypted_block = aes.decrypt(block)
+        plaintext_block = xor(decrypted_block, iv)
+        iv = block
+        result += plaintext_block
+
+    return result
 
 with open("2.txt", "r") as f:
-    d = f.read().replace("\n", "")
-    b = base64.b64decode(d)
-
+    key = "YELLOW SUBMARINE".encode("utf-8")
+    data = f.read().replace("\n", "")
+    data = base64.b64decode(data)
     iv = b'\x00' * 16 # 128 bits
 
-    i = 0
-    while i < len(b):
-        block = b[i:i+16]
-        data += xor(block, iv)
-        print(data)
-        i += 16
+    decrypted = cbc_decrypt(data, key, iv)
+    plaintext = base64.b64encode(decrypted)
+
+    aes = AES.new(key, AES.MODE_CBC, iv)
+    decrypted2 = aes.decrypt(data)
+    plaintext2 = base64.b64encode(decrypted2)
+
+    if plaintext == plaintext2:
+        print("Decrypted successfully!")
+        print(plaintext.decode("utf-8"))
+    else:
+        print("Decryption failed!")
